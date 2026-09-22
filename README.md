@@ -1,0 +1,149 @@
+# Registro di progetto — PMCSN
+
+**Corso:** Performance Modeling of Computer Systems and Networks (Prof.ssa V. de Nitto Personè)
+**Studente:** Matteo Lagioia
+**Titolo di lavoro:** Dimensionamento di un nodo di scrubbing DDoS di un PoP CDN sotto attacco della botnet AISURU (2025)
+**Ultimo aggiornamento:** 2026-09-22
+
+> Registro vivo: annota ogni parametro, fonte/articolo e decisione presa, con la data. Aggiornato a ogni passo del progetto.
+
+---
+
+## 1. Sintesi del caso reale
+
+Botnet **AISURU** (variante Mirai/TurboMirai), 2025. Recluta dispositivi IoT sfruttando vulnerabilità note e zero-day; con 1–4 milioni di dispositivi ha generato i DDoS più grandi mai registrati. Il progetto modella l'infrastruttura di **mitigazione/scrubbing** di un PoP CDN come sistema a coda, per dimensionarla in modo che il traffico legittimo rispetti la QoS durante l'attacco.
+
+### Vulnerabilità sfruttate (angolo cyber)
+| CVE / vettore | Dispositivo | Note |
+|---|---|---|
+| CVE-2017-5259 | Cambium Networks | N-day |
+| CVE-2023-28771 | Zyxel | N-day |
+| CVE-2023-50381 | Realtek Jungle SDK | N-day |
+| Zero-day cnPilot | Cambium cnPilot routers | osservato da giugno 2024 |
+| Supply-chain | server aggiornamento firmware Totolink | aprile 2025, script malevolo |
+
+### Numeri reali dell'attacco (da confermare/citare in relazione)
+- Picchi volumetrici: **22,2 → 29,7 → 31,4 Tbps**
+- Picco pacchetti: **14,1 miliardi pps** (Bpps)
+- Picco HTTP: **205 milioni rps** (Mrps)
+- Durata attacchi lampo: **35–69 s**
+- Dispositivi infetti: **1–4 milioni** (router, DVR, Android TV); ~300.000 router iniziali
+- Cloudflare: **47,1 milioni** di attacchi mitigati nel 2025 (autonomamente)
+
+---
+
+## 1-bis. Requisiti ufficiali del progetto (dalla Guida PMCSN)
+
+Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park):
+- **Step 0** — Individuale o gruppo ≤ 3. I **gruppi devono** progettare anche un **modello migliorativo** (Step 8). Deliverable: relazione (PDF), **codice sorgente del simulatore**, presentazione orale (10 min/componente in gruppo, 20 min individuale).
+- **Step 1** — Scelta caso + **Obiettivi**: Capacity Planning, Bottleneck Identification, System Tuning, SLA/QoS Compliance. Metriche: R/E(T_S), E(T_Q), N/E(N), U, **percentili** sui tempi.
+- **Step 2** — **Modello Concettuale e delle Specifiche**: definizione **stato S(t)**; topologia e componenti (centri, capacità code finita/infinita, single/multi/infinite server, matrice di routing); **eventi** (arrivi esterni, completamenti, eventi artificiali); **caratterizzazione del carico** (processi + classi); **distribuzioni** (Esponenziale, Bounded Pareto, Iperesponenziale, Uniforme, o trace-driven); **scheduling** (FIFO, Priorità astratta/Size-Based, PS, preemptive/non-preemptive).
+- **Step 3** — **Simulatore a eventi discreti (Next-Event)** in linguaggio general-purpose (C/C++/Java/Python): clock, event list, accumulatori statistici (sum.area, sum.service, departures), **PRNG a stream indipendenti**, gestione seed (plantseed/putseed fuori dal ciclo repliche).
+- **Step 4** — **Verifica & Validazione**: punto di controllo su versione semplificata (M/M/1 o MVA) confrontata con soluzioni analitiche; consistency checks (più serventi → meno coda; λ↑ → R↑ monotono).
+- **Step 5** — **Analisi del transitorio (obbligatoria)**: dallo stato iniziale (vuoto), 4–5 repliche indipendenti (seed diversi), media cumulativa, individuazione grafica del **warm-up**.
+- **Step 6** — **Orizzonte**: finito (64–96 repliche indip.) oppure infinito/steady-state (**batch means**, K≥32/64 batch di dimensione B). **Intervalli di confidenza 95%** (t di Student, α=0,05) per medie e percentili.
+- **Step 7** — Esecuzione run, analisi output (grafici + tabelle con IC), **fase decisionale** rispetto agli obiettivi.
+- **Step 8** — **Modello migliorativo** (obbligatorio per gruppi): autoscaling dinamico, servizi Fast-Track, routing intelligente, code di priorità aggiuntive; confronto sistematico base vs migliorativo (variazione % degli indici).
+- **Step 9** — Relazione (struttura = passi dell'algoritmo) + orale sintetico.
+
+> ⚠️ **Implicazione chiave:** il cuore del progetto è un **simulatore**, non solo formule. Gli strumenti analitici (M/M/1, Erlang, ecc.) servono soprattutto come **benchmark di validazione** (Step 4). Il caso DDoS/AISURU è coerente: transitorio rilevante (attacchi 35–69 s), multi-classe, priorità, buffer finito.
+
+---
+
+## 2. Parametri del modello (baseline provvisoria — SINTETICA, da validare)
+
+> ⚠️ Valori scelti per avere numeri comodi e stabilità per m ≥ 4. Sono **sintetici**: da giustificare combinando report pubblici 2025 + benchmark di letteratura (non tracce reali del PoP).
+
+| Simbolo | Significato | Valore baseline | Fonte/nota |
+|---|---|---|---|
+| E(S) | tempo medio di ispezione per richiesta | 0,1 ms | assunto (ispezione L7) |
+| μ | capacità di un core | 10.000 req/s | = 1/E(S) |
+| λ_L | frequenza traffico legittimo | 6.000 req/s | assunto (ρ=0,6 a 1 core in condizioni normali) |
+| λ_A | frequenza traffico d'attacco | 24.000 req/s | assunto (4× il legittimo) |
+| λ = λ_L+λ_A | carico totale sotto attacco | 30.000 req/s | → ρ = 3/m, stabile per m ≥ 4 |
+| m | n. core/serventi scrubbing | ≥ 4 (da dimensionare) | incognita di progetto |
+| K | capacità buffer (finita) | da definire | per calcolo P_loss |
+| p1, p2 | frazione arrivi classe legittima/sospetta | 0,2 / 0,8 | = λ_L/λ, λ_A/λ |
+
+### Requisiti QoS (target di progetto — provvisori)
+- Tempo di risposta medio complessivo sotto attacco: **E(T_S) ≤ 0,5 ms**
+- Tempo di risposta medio traffico legittimo (con priorità): **E(T_S,legittimo) ≤ 0,3 ms**
+- Perdita traffico legittimo: **≤ 1%**
+
+---
+
+## 3. Decisioni di modellazione (log)
+
+| Data | Decisione | Motivazione | Stato |
+|---|---|---|---|
+| 2026-09-22 | Caso scelto: scrubbing DDoS / AISURU | Recente, reale, cyber/vulnerabilità; mappa su code, Erlang, perdita, scheduling | confermata |
+| 2026-09-22 | Workload multi-classe: legittimo vs attacco | Serve per scheduling a priorità e per P_loss del legittimo | confermata |
+| 2026-09-22 | Nodo scrubbing = risorsa critica (bottleneck) | Astrazione: si isola il collo di bottiglia, non tutto il PoP | confermata |
+| 2026-09-22 | Arrivi Poisson (legittimo); attacco heavy-load/eventualmente NHPP in ramp-up | Sovrapposizione molti utenti indip. → Poisson (Palm-Khinchin) | da validare |
+| 2026-09-22 | Buffer finito M/M/m/K per gestire ρ≥1 e calcolare P_loss | Senza loss il sistema aperto diverge sotto attacco | confermata |
+| 2026-09-22 | Valutare ANCHE il transitorio (attacchi 35–69 s) | L'attacco è impulsivo/non stazionario: steady-state da solo sottostima i ritardi iniziali | da approfondire |
+| 2026-09-22 | **Gruppo di 2 persone** | → **modello migliorativo (Step 8) obbligatorio**; comunicare i componenti al docente via e-mail prima dell'inizio | confermata |
+| 2026-09-22 | **Linguaggio simulatore: Python** | Scelta per lo Step 3 (Next-Event); attenzione a PRNG con stream indipendenti e gestione seed (plantseed/putseed) | confermata |
+| 2026-09-22 | **VINCOLO: usare solo distribuzioni/discipline/metodi visti a lezione** | Evitare tecniche non trattate nel corso (rischio all'esame/relazione) | confermata |
+
+### Step 2 — Modello concettuale e delle specifiche (decisioni)
+| Elemento | Scelta | Nota / da verificare |
+|---|---|---|
+| Stato analitico S(t) | vettore popolazione (n₁,n₂), 0≤n₁+n₂≤K | catena di Markov multi-classe |
+| Stato simulatore | l₁,l₂, servers[m] (idle/busy+classe), code per classe Q₁,Q₂ | + timestamp arrivo/servizio |
+| Topologia | 1 centro **multi-server m**, buffer **finito K**, sistema aperto | opzione a 2 stadi (ingress→scrubbing) solo se serve |
+| Eventi | arrivo cl.1, arrivo cl.2, completamento servente s; artificiali: cambio fase, campionamento, stop | |
+| Carico cl.1 (legittimo) | Poisson omogeneo λ₁ | Palm–Khinchin |
+| Carico cl.2 (attacco) | Poisson a **carico costante elevato**; picco via **evento artificiale** che cambia λ₂ | ⚠️ **NHPP: verificare se fatto a lezione; se no, NON usarlo** → usare fasce/evento artificiale |
+| Interarrivi | **Esponenziale** | visto a lezione ✓ |
+| Tempi di servizio | **Esponenziale** (modello analitico/validazione) + variante ad alta variabilità **Iperesponenziale H₂** | H₂ ✓ nel corso. ⚠️ **Bounded Pareto: verificare se trattata; se no, usare H₂ (o Erlang) al suo posto** |
+| Scheduling | **FIFO**, **priorità astratta NP/P**, **size-based**, **PS** (per confronto slowdown) | tutti ✓ nel corso (cfr. formulario). SRPT solo se richiesto |
+| Criticità chiave | priorità multi-classe + buffer finito ⇒ **niente forma prodotto** ⇒ simulatore obbligatorio; transitorio obbligatorio | |
+
+### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
+1. Nodo singolo normale → M/M/1 / KP
+2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
+3. Buffer finito → sistema a perdita M/M/m/K (Erlang-B), P_loss, throughput effettivo
+4. Protezione legittimo → scheduling a priorità (senza prelazione) + size-based + slowdown
+5. Pipeline end-to-end + upgrade → rete aperta (Jackson) + legge gen. tempo di risposta + fattore di scala + bound Xmax=1/Dmax
+
+---
+
+## 4. Fonti e articoli
+
+### Notizie / report sul caso (verificati via web, set. 2026)
+- Cloudflare — 2025 Q4 DDoS threat report (31,4 Tbps): https://blog.cloudflare.com/ddos-threat-report-2025-q4/
+- SecurityAffairs — AISURU 29,7 Tbps: https://securityaffairs.com/185299/security/cloudflare-mitigates-record-29-7-tbps-ddos-attack-by-the-aisuru-botnet.html
+- The Hacker News — record 11,5 Tbps (AISURU): https://thehackernews.com/2025/09/cloudflare-blocks-record-breaking-115.html
+- GBHackers — AISURU, 300.000 router e CVE sfruttate: https://gbhackers.com/aisuru-botnet/
+- Krebs on Security — AISURU colpisce ISP USA: https://krebsonsecurity.com/2025/10/ddos-botnet-aisuru-blankets-us-isps-in-record-ddos/
+
+### Testi/materiali del corso (da citare nella relazione)
+- Leemis & Park — *Discrete-Event Simulation: A First Course* (processo di modellazione, obiettivi, modello concettuale)
+- Harchol-Balter — *Performance Modeling and Design of Computer Systems* (sistemi aperti/chiusi; scheduling a priorità e size-based)
+- Serazzi — *Performance Modeling* (astrazione, single station & bottleneck, casi di studio edge/cloud, autoscaler)
+- Kurkowski — (metodologia simulazione/credibilità)
+- Slide e trascrizioni del corso (Prof.ssa de Nitto Personè)
+
+> ⚠️ Da verificare direttamente nei materiali: numeri esatti di capitoli/sezioni e nomi file delle slide citati da NotebookLM (vedi note di verifica del Punto 1).
+
+---
+
+## 5. Questioni aperte / TODO
+- [x] **Individuale o gruppo?** → **Gruppo di 2** ⇒ modello migliorativo (Step 8) OBBLIGATORIO; ricordare la comunicazione via e-mail al docente.
+- [x] **Linguaggio del simulatore** → **Python**.
+- [ ] Idea per il modello migliorativo (Step 8): autoscaling dinamico dei moduli di scrubbing, corsia Fast-Track per il legittimo, o routing intelligente — da scegliere.
+- [ ] Confermare i riferimenti bibliografici esatti (capitoli/sezioni) nelle proprie copie dei testi.
+- [ ] Decidere valore di K (capacità buffer) e da dove ricavarlo.
+- [ ] Decidere distribuzione del tempo di servizio: Esponenziale vs Bounded Pareto/Iperesponenziale (heavy-tail per richieste HTTP).
+- [ ] Decidere se modellare il ramp-up dell'attacco (evento artificiale / fascia temporale) o scenario a carico costante + what-if.
+- [ ] Orizzonte: transitorio (obbligatorio) + scelta finito vs steady-state/batch means.
+- [ ] Validare i parametri sintetici con almeno un benchmark di letteratura.
+
+---
+
+## 6. Changelog
+- **2026-09-22 (a)** — Creazione registro. Scelta caso (AISURU/scrubbing), parametri baseline, mappatura esercizi, fonti iniziali. Impostazione Punto 1.
+- **2026-09-22 (b)** — Letta la **Guida ufficiale del progetto**: aggiunta sezione 1-bis con i 9 step. Emerso requisito **simulatore a eventi discreti**, transitorio obbligatorio, modello migliorativo per gruppi. Aggiornati i TODO. Preparato il prompt NotebookLM per lo **Step 2 (Modello Concettuale e delle Specifiche)**.
+- **2026-09-22 (c)** — Decisioni: **gruppo di 2** (⇒ Step 8 obbligatorio) e **simulatore in Python**.
+- **2026-09-22 (d)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 2**: fissate le decisioni su stato, eventi, carico, distribuzioni e scheduling. Aggiunto **vincolo: solo distribuzioni/discipline viste a lezione** (⚠️ NHPP e Bounded Pareto da verificare; in caso negativo → evento artificiale per il picco e H₂ per la variabilità). Preparato il prompt per lo **Step 3 (simulatore Next-Event in Python)**.
