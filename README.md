@@ -6,6 +6,23 @@
 **Ultimo aggiornamento:** 2026-09-22
 
 > Registro vivo: annota ogni parametro, fonte/articolo e decisione presa, con la data. Aggiornato a ogni passo del progetto.
+> Repo GitHub: **pmcsn-ddos-scrubbing** (pubblica). Questo README è il registro ufficiale del progetto.
+
+---
+
+## 0. Stato di avanzamento (9 step della Guida)
+
+| Step | Descrizione | Stato |
+|---|---|---|
+| 1 | Scelta del sistema + obiettivi | ✅ deciso, sezione redatta |
+| 2 | Modello concettuale & specifiche | ✅ deciso (stato, eventi, distrib., scheduling); sezione da finalizzare |
+| 3 | Simulatore Next-Event (Python) | ✅ impostazione decisa; **implementazione da fare** |
+| 4 | Verifica & validazione | ⬜ da fare |
+| 5 | Analisi del transitorio (obbligatoria) | ⬜ da fare |
+| 6 | Disegno esperimenti / orizzonte | ⬜ da fare |
+| 7 | Analisi output & decisione | ⬜ da fare |
+| 8 | Modello migliorativo (obbligatorio in gruppo) | ⬜ da fare |
+| 9 | Relazione + presentazione orale | ⬜ da fare |
 
 ---
 
@@ -100,6 +117,25 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 | Scheduling | **FIFO**, **priorità astratta NP/P**, **size-based**, **PS** (per confronto slowdown) | tutti ✓ nel corso (cfr. formulario). SRPT solo se richiesto |
 | Criticità chiave | priorità multi-classe + buffer finito ⇒ **niente forma prodotto** ⇒ simulatore obbligatorio; transitorio obbligatorio | |
 
+### Step 3 — Modello computazionale / simulatore (decisioni)
+| Elemento | Scelta | Nota |
+|---|---|---|
+| Paradigma | **Next-Event** (event-scheduling), Python nativo | fedele a `ssq3`/`msq` di Leemis & Park; **no SimPy/librerie di simulazione** |
+| Libreria PRNG | **`rngs.py` / `rvgs.py`** di Leemis & Park | multi-stream Lehmer |
+| Stream (SelectStream) | 0=arrivi cl.1, 1=arrivi cl.2, 2=servizio cl.1, 3=servizio cl.2, 4=eventi artificiali | stream separati e disgiunti |
+| Seed | **`PlantSeeds()` UNA volta, FUORI dal ciclo repliche** | run i.i.d., no correlazione (Kurkowski) |
+| Event list | ARR1, ARR2, m completamenti (uno per servente), evento fase, STOP; idle ⇒ `t=INFINITY` | |
+| Stato | `number_c1,number_c2`, `servers[m]` (busy+classe), `queue_c1`,`queue_c2` (timestamp arrivo) | |
+| Scheduling nel sim. | **priorità astratta non-preemptive** (coda 1 prima della coda 2) | coerente con Step 2 |
+| Accumulatori | `area.node/queue/service` (integrali d'area, aggiornati PRIMA di cambiare stato), `sum.delay`, `sum.service`, conteggi arrivi/completamenti/**dropped** per classe | metriche via leggi operazionali |
+| Metriche | E(N_c)=area.node/T, E(N_Q,c)=area.queue/T, E(T_Q,c)=sum.delay/C_c, E(T_S,c)=E(T_Q,c)+E(S_c), U=area.service/(m·T), X_c=C_c/T, P_loss,c=dropped/arrivi | |
+| Picco d'attacco | **evento artificiale a fasce** (Normale→Picco→Mitigazione) che cambia λ₂ | invece di NHPP ✓ |
+| Variabilità servizio | **Esponenziale** nel base; **H₂/Erlang** come variante ad alta variabilità | Bounded Pareto evitata ✓ |
+| Predisposizione Step 4 | riducibile a **M/M/1** (λ₂=0, m=1, K=∞) e **M/M/m/K** (λ₂=0) per confronto analitico | |
+| Predisposizione Step 5 | registrare **media cumulativa** N̄(t) a intervalli per il warm-up | |
+
+> ⚠️ Note tecniche da tenere presenti in fase di implementazione: (a) lo pseudocodice Python della risposta ha refusi da correggere (indici `event_list[0]/[1]`, `[0]*SERVERS`, `event_type.split('_')[1]`); (b) `sum.service` va accumulato per **tutti** i job serviti (anche quelli presi in servizio all'arrivo, non solo dalla coda), altrimenti E(T_S) è sottostimato; (c) i valori `SERVERS=8, K=50, STOP=14400` nello sketch sono **placeholder** da fissare; (d) i nomi di slide/capitoli citati vanno verificati sui materiali reali. **Consiglio:** tenere il **servizio esponenziale nel modello base** (così l'M/M/m/K è verificabile analiticamente) e usare H₂ solo come variante/what-if.
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -147,3 +183,5 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (b)** — Letta la **Guida ufficiale del progetto**: aggiunta sezione 1-bis con i 9 step. Emerso requisito **simulatore a eventi discreti**, transitorio obbligatorio, modello migliorativo per gruppi. Aggiornati i TODO. Preparato il prompt NotebookLM per lo **Step 2 (Modello Concettuale e delle Specifiche)**.
 - **2026-09-22 (c)** — Decisioni: **gruppo di 2** (⇒ Step 8 obbligatorio) e **simulatore in Python**.
 - **2026-09-22 (d)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 2**: fissate le decisioni su stato, eventi, carico, distribuzioni e scheduling. Aggiunto **vincolo: solo distribuzioni/discipline viste a lezione** (⚠️ NHPP e Bounded Pareto da verificare; in caso negativo → evento artificiale per il picco e H₂ per la variabilità). Preparato il prompt per lo **Step 3 (simulatore Next-Event in Python)**.
+- **2026-09-22 (e)** — Creata e pushata la **repo GitHub `pmcsn-ddos-scrubbing`** (pubblica) con questo registro come README. Aggiunta sezione "Stato di avanzamento". Preparati i prompt NotebookLM per gli Step 4–9.
+- **2026-09-22 (f)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 3** (simulatore Next-Event in Python): fissate architettura, strutture dati, gestione eventi, accumulatori/leggi operazionali, multi-stream `rngs`/`rvgs`, `PlantSeeds` fuori dal ciclo, predisposizione a verifica (M/M/1, M/M/m/K) e transitorio. Annotati refusi dello pseudocodice e consiglio di tenere servizio esponenziale nel base. Prossimo: prompt Step 4 (Verifica & Validazione).
