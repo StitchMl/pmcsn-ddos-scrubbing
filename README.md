@@ -21,7 +21,7 @@
 | 5 | Analisi del transitorio (obbligatoria) | ✅ impostazione decisa (Welch + finestre a fasce) |
 | 6 | Disegno esperimenti / orizzonte | ✅ impostazione decisa (repliche + batch means + CRN) |
 | 7 | Analisi output & decisione | ✅ impostazione decisa (criteri m*, λ₂*, confronto CRN) |
-| 8 | Modello migliorativo (obbligatorio in gruppo) | ⬜ da fare |
+| 8 | Modello migliorativo (obbligatorio in gruppo) | ✅ impostazione decisa (candidato: autoscaling) |
 | 9 | Relazione + presentazione orale | ⬜ da fare |
 
 ---
@@ -180,6 +180,15 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 | Trade-off/vincoli | m↑ meno code ma più costo; K↑ azzera scarti ma aumenta ritardo (bufferbloat/jitter); ottimo = (m*,K*) minimo costo con P_loss,1≤1% e W₁≤W_SLA al picco |
 | Criticità | non concludere da IC sovrapposti senza test accoppiato; decisione sensibile ai parametri sintetici dell'attacco; ottimo a regime ≠ tenuta al transitorio d'attacco (bilanciare entrambi) |
 
+### Step 8 — Modello migliorativo (decisioni)
+| Aspetto | Contenuto |
+|---|---|
+| Proposte (da programma) | **A) Autoscaling orizzontale con isteresi** (Serazzi); **B) Size-Based/SITA + Fast-Track** (Harchol-Balter); **C) Multi-queue + routing/overflow verso nodo di supporto** (caso edge/cloud Serazzi) |
+| Candidato scelto | **Autoscaling dinamico dei serventi** (m variabile tra m_min e m_max) — *da confermare col compagno* |
+| Modellazione (Next-Event) | nuove variabili `m_active`, `server_status[i]`∈{OFF,WARMING_UP,IDLE,BUSY}; parametri soglie **N_up/N_down** + **Δt_setup** (setup time); nuovi eventi `SERVER_ACTIVATED`/`SERVER_DEACTIVATED`; logica scale-up in arrivo, scale-down in completamento |
+| Confronto base vs migliorativo | **stessi scenari + CRN**; **differenza accoppiata** dᵢ=X_migl,i−X_base,i con IC 95% (via `estimate`); significativo se IC non contiene 0; **variazione %** Δ%=(X_migl−X_base)/X_base; tabelle affiancate + grafici W₁ vs λ₂ |
+| Criticità | **chattering** se N_up/N_down troppo vicine (serve isteresi/tempo minimo); **setup delay** troppo lungo ⇒ servente pronto a picco finito; **fairness**: autoscaling/size-based penalizzano fortemente la Classe 2 (possibile starvation) |
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -235,3 +244,4 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (i)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 6** (Disegno esperimenti): repliche (orizzonte finito) per l'attacco, batch means (k≥32/64) per il dimensionamento, IC 95% con `estimate`/Welford, matrice what-if (m,K,λ₂,disciplina) e **Common Random Numbers** per i confronti. Prossimo: prompt Step 7 (analisi output e decisione).
 - **2026-09-22 (j)** — Deciso il **piano di lavoro codice**: completare prima il metodo (prompt Step 7–9 su NotebookLM), poi scrivere il simulatore Python **commentato**; l'esecuzione sarà a carico dello studente.
 - **2026-09-22 (k)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 7** (Analisi output & decisione): aggregazione Welford senza raw data, grafici con barre IC, criteri decisionali m*/λ₂*, confronto CRN con differenza accoppiata e overlap trap. Prossimo: prompt Step 8 (modello migliorativo, obbligatorio per il gruppo).
+- **2026-09-22 (l)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 8** (Modello migliorativo): proposte autoscaling/size-based/routing; candidato **autoscaling con isteresi** (da confermare); modellazione (nuovi stati/eventi/soglie, setup time); confronto base vs migliorativo con CRN + differenza accoppiata + variazione %. Prossimo: prompt Step 9 (relazione + orale).
