@@ -279,6 +279,9 @@ Mappatura reale → modello (nodo di scrubbing):
 ```
 pmcsn-ddos-scrubbing/
 ├── README.md                (questo registro)
+├── docs/
+│   ├── schema-sistema.svg/.png   schema a code: base + contromisure
+│   └── risultati.md              risultati delle simulazioni
 └── src/
     ├── rngs.py              PRNG multi-stream (Leemis & Park)          ✅
     ├── rvgs.py              generatori di variabili aleatorie          ✅
@@ -292,3 +295,4 @@ Per eseguire la demo (mappatura reale + regime nominale + attacco a fasce):  `py
 
 ## Changelog codice
 - **2026-09-22 (o)** — Simulatore reso **aderente al caso reale**: aggiunto l'**attacco a fasce** (Normale→Picco→Mitigazione, evento artificiale) e i **parametri derivati dai numeri AISURU** in `src/scenarios.py` (con mappatura reale→modello e giustificazione via fattore di scala). Aggiunte metriche **per fascia** (P_loss durante il picco). Emerso il risultato chiave: al picco il **drop-tail non è priority-aware** ⇒ perde anche il legittimo ⇒ base per le contromisure dello Step 8.
+- **2026-09-22 (p)** — Codice reso **minimal** (commenti ridotti, output compatto e **colorato**). Aggiunti `docs/schema-sistema.svg/.png` (schema a code: pannello A base + pannello B contromisure ①corsia riservata ②autoscaling ③rate-limit) e `docs/risultati.md` (risultati appuntati: nominale + attacco per fascia).
