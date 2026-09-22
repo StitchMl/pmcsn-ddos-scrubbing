@@ -15,11 +15,11 @@ def _run(cfg):
     return run_simulation(cfg)
 
 
-def main():
+def _fastTrack():
     base = _run(scenario_attack())                         # K2 = K (nessuna riserva)
     ft = _run(scenario_attack(K2=K_BUFFER - RESERVE))      # Fast-Track
 
-    print(f"{B}Contromisura ① Fast-Track{RST}  "
+    print(f"{B}Contromisura 1 - Fast-Track{RST}  "
           f"{DIM}(riserva {RESERVE} slot su {K_BUFFER} alla Classe 1){RST}")
     print(f"{'fase':12s} {'perdita legittimo: BASE':>26s}   {'FAST-TRACK':>12s}")
     nomi = ["Normale", "Picco", "Mitigazione"]
@@ -33,4 +33,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _fastTrack()

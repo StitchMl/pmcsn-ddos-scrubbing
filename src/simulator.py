@@ -206,3 +206,7 @@ def _demo():
 
 if __name__ == "__main__":
     _demo()
+
+    # fastTrack
+    from compare_fasttrack import _fastTrack
+    _fastTrack()
