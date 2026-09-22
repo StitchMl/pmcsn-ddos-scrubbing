@@ -200,6 +200,7 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - [x] **Individuale o gruppo?** → **Gruppo di 2** ⇒ modello migliorativo (Step 8) OBBLIGATORIO; ricordare la comunicazione via e-mail al docente.
 - [x] **Linguaggio del simulatore** → **Python**.
 - [ ] Idea per il modello migliorativo (Step 8): autoscaling dinamico dei moduli di scrubbing, corsia Fast-Track per il legittimo, o routing intelligente — da scegliere.
+- [ ] **Piano di lavoro codice:** prima si completa il metodo con NotebookLM (Step 7–9), poi si scrive il codice Python (`src/`: `rngs.py`, `rvgs.py`, `simulator.py`, `verify.py`, `transient.py`, `experiments.py`). Il codice va **commentato**; l'**esecuzione la fa lo studente** (non eseguito nel workspace).
 - [ ] Confermare i riferimenti bibliografici esatti (capitoli/sezioni) nelle proprie copie dei testi.
 - [ ] Decidere valore di K (capacità buffer) e da dove ricavarlo.
 - [ ] Decidere distribuzione del tempo di servizio: Esponenziale vs Bounded Pareto/Iperesponenziale (heavy-tail per richieste HTTP).
@@ -219,3 +220,4 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (g)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 4** (Verifica & Validazione): fissati controlli di verifica (bilancio flussi, Little, W=D+S), baseline analitici M/M/1 / M/M/m / M/M/m/K (Erlang-B), criterio dell'IC 95% e consistency checks. Prossimo: prompt Step 5 (Analisi del transitorio).
 - **2026-09-22 (h)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 5** (Analisi del transitorio): metodo di Welch, repliche indipendenti, media cumulativa, troncamento del warm-up per lo steady-state; distinzione tra transitorio iniziale (da troncare) e transitorio d'attacco a fasce (orizzonte finito, da analizzare). Prossimo: prompt Step 6 (orizzonte finito/infinito, batch means, IC).
 - **2026-09-22 (i)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 6** (Disegno esperimenti): repliche (orizzonte finito) per l'attacco, batch means (k≥32/64) per il dimensionamento, IC 95% con `estimate`/Welford, matrice what-if (m,K,λ₂,disciplina) e **Common Random Numbers** per i confronti. Prossimo: prompt Step 7 (analisi output e decisione).
+- **2026-09-22 (j)** — Deciso il **piano di lavoro codice**: completare prima il metodo (prompt Step 7–9 su NotebookLM), poi scrivere il simulatore Python **commentato**; l'esecuzione sarà a carico dello studente.
