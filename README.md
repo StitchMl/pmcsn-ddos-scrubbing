@@ -20,7 +20,7 @@
 | 4 | Verifica & validazione | ✅ impostazione decisa (baseline analitici + criterio CI) |
 | 5 | Analisi del transitorio (obbligatoria) | ✅ impostazione decisa (Welch + finestre a fasce) |
 | 6 | Disegno esperimenti / orizzonte | ✅ impostazione decisa (repliche + batch means + CRN) |
-| 7 | Analisi output & decisione | ⬜ da fare |
+| 7 | Analisi output & decisione | ✅ impostazione decisa (criteri m*, λ₂*, confronto CRN) |
 | 8 | Modello migliorativo (obbligatorio in gruppo) | ⬜ da fare |
 | 9 | Relazione + presentazione orale | ⬜ da fare |
 
@@ -167,6 +167,19 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 | Confronto configurazioni | **Common Random Numbers (CRN)**: stessi stream di arrivo (0,1) su tutte le varianti ⇒ le differenze dipendono solo dalle scelte strutturali, non dal rumore |
 | Criticità | b troppo piccolo ⇒ autocorrelazione residua ⇒ IC falsamente stretti (copertura ≪95%); b troppo grande ⇒ k<10 ⇒ t* instabile e IC larghi; confronti senza CRN ⇒ potere statistico ridotto |
 
+### Step 7 — Analisi output & fase decisionale (decisioni)
+| Aspetto | Contenuto |
+|---|---|
+| Output | **niente raw data dump**: aggregazione online con **Welford** (media/varianza a singolo passaggio); salvare solo il vettore sintetico per configurazione (medie + semiampiezze IC) + seed/`SelectStream` per riproducibilità |
+| Grafici | ogni punto con **barra IC 95%**; assi con unità; interpolazione solo per X continua (λ₂), punti discreti per m; alto data-to-ink. G1: W₁,P_loss,1 vs m (+ linea SLA); G2: P_loss vs λ₂ (soglia 1%); G3: FIFO vs priorità (W₁ vs λ₂) |
+| Tabelle | stima ± semiampiezza w per W₁,W₂,D₁,D₂,P_loss,1,P_loss,2,U,X_eff; celle SLA in grassetto |
+| Decisione m* | minimo m con **W̄₁(m)+w₁(m) ≤ W_SLA** (limite superiore IC sotto la SLA) |
+| Decisione λ₂* | massimo λ₂ prima che P_loss,1 superi 1% (intersezione della stima intervallare con 0.01) |
+| Scheduling | priorità NP protegge la Classe 1 scaricando ritardo/scarto sulla Classe 2; FIFO fa collassare anche il legittimo sotto attacco |
+| Confronto robusto | **CRN + differenza accoppiata** dᵢ=x_{A,i}−x_{B,i}, IC su d̄: se **non contiene 0** ⇒ A≠B significativo; se contiene 0 ⇒ indistinguibili. Attenzione all'**overlap trap** degli IC |
+| Trade-off/vincoli | m↑ meno code ma più costo; K↑ azzera scarti ma aumenta ritardo (bufferbloat/jitter); ottimo = (m*,K*) minimo costo con P_loss,1≤1% e W₁≤W_SLA al picco |
+| Criticità | non concludere da IC sovrapposti senza test accoppiato; decisione sensibile ai parametri sintetici dell'attacco; ottimo a regime ≠ tenuta al transitorio d'attacco (bilanciare entrambi) |
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -221,3 +234,4 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (h)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 5** (Analisi del transitorio): metodo di Welch, repliche indipendenti, media cumulativa, troncamento del warm-up per lo steady-state; distinzione tra transitorio iniziale (da troncare) e transitorio d'attacco a fasce (orizzonte finito, da analizzare). Prossimo: prompt Step 6 (orizzonte finito/infinito, batch means, IC).
 - **2026-09-22 (i)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 6** (Disegno esperimenti): repliche (orizzonte finito) per l'attacco, batch means (k≥32/64) per il dimensionamento, IC 95% con `estimate`/Welford, matrice what-if (m,K,λ₂,disciplina) e **Common Random Numbers** per i confronti. Prossimo: prompt Step 7 (analisi output e decisione).
 - **2026-09-22 (j)** — Deciso il **piano di lavoro codice**: completare prima il metodo (prompt Step 7–9 su NotebookLM), poi scrivere il simulatore Python **commentato**; l'esecuzione sarà a carico dello studente.
+- **2026-09-22 (k)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 7** (Analisi output & decisione): aggregazione Welford senza raw data, grafici con barre IC, criteri decisionali m*/λ₂*, confronto CRN con differenza accoppiata e overlap trap. Prossimo: prompt Step 8 (modello migliorativo, obbligatorio per il gruppo).
