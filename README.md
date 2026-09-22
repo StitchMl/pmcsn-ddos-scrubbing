@@ -18,7 +18,7 @@
 | 2 | Modello concettuale & specifiche | ✅ deciso (stato, eventi, distrib., scheduling); sezione da finalizzare |
 | 3 | Simulatore Next-Event (Python) | ✅ impostazione decisa; **implementazione da fare** |
 | 4 | Verifica & validazione | ✅ impostazione decisa (baseline analitici + criterio CI) |
-| 5 | Analisi del transitorio (obbligatoria) | ⬜ da fare |
+| 5 | Analisi del transitorio (obbligatoria) | ✅ impostazione decisa (Welch + finestre a fasce) |
 | 6 | Disegno esperimenti / orizzonte | ⬜ da fare |
 | 7 | Analisi output & decisione | ⬜ da fare |
 | 8 | Modello migliorativo (obbligatorio in gruppo) | ⬜ da fare |
@@ -145,6 +145,17 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 | Consistency checks (validazione) | monotonìa: m↑ ⇒ E(N),D,P_loss↓; λ↑ ⇒ W,U,P_loss↑; saturazione λ≫mμ ⇒ P_loss→1−mμ/λ; grafici W vs λ, P_loss vs K, E(N) vs m |
 | Ramo multi-classe/priorità | non ha forma prodotto: validare prima il motore in mono-classe (λ₂=0 vs M/M/m/K), poi verificare che E(T_Q,1)<E(T_Q,2) e la conservazione del lavoro |
 
+### Step 5 — Analisi del transitorio (decisioni)
+| Aspetto | Contenuto |
+|---|---|
+| Problema | **initial condition bias**: partenza da sistema vuoto (N(0)=0) sottostima code/attese iniziali |
+| Procedura | R=4–5 repliche indipendenti (seed via `PlantSeeds` fuori dal ciclo) sovrapposte; media cumulativa **N̄(t)=area.node(t)/t** e W̄(n)=Σwᵢ/n |
+| Warm-up | **metodo di Welch**: media di ensemble tra repliche + media mobile ⇒ individuare t_warm dove la curva si appiattisce |
+| Uso del warm-up | per lo **steady-state** (dimensionamento nominale) si **scarta [0, t_warm]** e si azzerano gli accumulatori a t_warm |
+| Scenario attacco | l'attacco a fasce (Normale→Picco→Mitigazione) NON ammette steady-state ⇒ **orizzonte finito (terminating)**, inizializzando lo stato al regime pre-attacco; **il transitorio dell'attacco NON si tronca** (è l'oggetto di studio) |
+| Grafici report | N̄(t) multi-replica; curva Welch con cutoff t_warm; profilo temporale N̄(t), W̄₁(t), W̄₂(t), P_loss(t) lungo le fasi |
+| Criticità | t_warm cresce con ρ→1 e con m; scelta dell'intervallo di campionamento; non confondere transitorio iniziale (artefatto, da troncare) con transitorio d'attacco (fisico, da analizzare) |
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -195,3 +206,4 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (e)** — Creata e pushata la **repo GitHub `pmcsn-ddos-scrubbing`** (pubblica) con questo registro come README. Aggiunta sezione "Stato di avanzamento". Preparati i prompt NotebookLM per gli Step 4–9.
 - **2026-09-22 (f)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 3** (simulatore Next-Event in Python): fissate architettura, strutture dati, gestione eventi, accumulatori/leggi operazionali, multi-stream `rngs`/`rvgs`, `PlantSeeds` fuori dal ciclo, predisposizione a verifica (M/M/1, M/M/m/K) e transitorio. Annotati refusi dello pseudocodice e consiglio di tenere servizio esponenziale nel base. Prossimo: prompt Step 4 (Verifica & Validazione).
 - **2026-09-22 (g)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 4** (Verifica & Validazione): fissati controlli di verifica (bilancio flussi, Little, W=D+S), baseline analitici M/M/1 / M/M/m / M/M/m/K (Erlang-B), criterio dell'IC 95% e consistency checks. Prossimo: prompt Step 5 (Analisi del transitorio).
+- **2026-09-22 (h)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 5** (Analisi del transitorio): metodo di Welch, repliche indipendenti, media cumulativa, troncamento del warm-up per lo steady-state; distinzione tra transitorio iniziale (da troncare) e transitorio d'attacco a fasce (orizzonte finito, da analizzare). Prossimo: prompt Step 6 (orizzonte finito/infinito, batch means, IC).
