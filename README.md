@@ -19,7 +19,7 @@
 | 3 | Simulatore Next-Event (Python) | ✅ impostazione decisa; **implementazione da fare** |
 | 4 | Verifica & validazione | ✅ impostazione decisa (baseline analitici + criterio CI) |
 | 5 | Analisi del transitorio (obbligatoria) | ✅ impostazione decisa (Welch + finestre a fasce) |
-| 6 | Disegno esperimenti / orizzonte | ⬜ da fare |
+| 6 | Disegno esperimenti / orizzonte | ✅ impostazione decisa (repliche + batch means + CRN) |
 | 7 | Analisi output & decisione | ⬜ da fare |
 | 8 | Modello migliorativo (obbligatorio in gruppo) | ⬜ da fare |
 | 9 | Relazione + presentazione orale | ⬜ da fare |
@@ -156,6 +156,17 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 | Grafici report | N̄(t) multi-replica; curva Welch con cutoff t_warm; profilo temporale N̄(t), W̄₁(t), W̄₂(t), P_loss(t) lungo le fasi |
 | Criticità | t_warm cresce con ρ→1 e con m; scelta dell'intervallo di campionamento; non confondere transitorio iniziale (artefatto, da troncare) con transitorio d'attacco (fisico, da analizzare) |
 
+### Step 6 — Disegno esperimenti / orizzonte (decisioni)
+| Aspetto | Contenuto |
+|---|---|
+| Attacco a fasce | **orizzonte finito (terminating)**: **repliche indipendenti** (n=64 o 96), stesse condizioni iniziali, `PlantSeeds` fuori dal ciclo; NON si tronca il transitorio |
+| Dimensionamento nominale | **orizzonte infinito (steady-state)**: singolo run lungo + **Batch Means** dopo il warm-up (Step 5) |
+| Batch Means | k batch (**k≥32, rif. 64**), dimensione b abbastanza grande da azzerare l'**autocorrelazione** (b ≳ 2× lag di cutoff); medie di batch trattate i.i.d. Normali |
+| IC 95% | x̄ ± t*·s/√(N−1), t*=idfStudent(N−1, 0.975); t*→1.96 per N>40; per medie **e** percentili; programma **`estimate`** (algoritmo di Welford) |
+| Piano what-if | far variare **m∈{2,4,8,16}**, **K∈{10,50,100,200,∞}**, **λ₂** (moderato→sovraccarico), **disciplina** (FIFO vs priorità) |
+| Confronto configurazioni | **Common Random Numbers (CRN)**: stessi stream di arrivo (0,1) su tutte le varianti ⇒ le differenze dipendono solo dalle scelte strutturali, non dal rumore |
+| Criticità | b troppo piccolo ⇒ autocorrelazione residua ⇒ IC falsamente stretti (copertura ≪95%); b troppo grande ⇒ k<10 ⇒ t* instabile e IC larghi; confronti senza CRN ⇒ potere statistico ridotto |
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -207,3 +218,4 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (f)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 3** (simulatore Next-Event in Python): fissate architettura, strutture dati, gestione eventi, accumulatori/leggi operazionali, multi-stream `rngs`/`rvgs`, `PlantSeeds` fuori dal ciclo, predisposizione a verifica (M/M/1, M/M/m/K) e transitorio. Annotati refusi dello pseudocodice e consiglio di tenere servizio esponenziale nel base. Prossimo: prompt Step 4 (Verifica & Validazione).
 - **2026-09-22 (g)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 4** (Verifica & Validazione): fissati controlli di verifica (bilancio flussi, Little, W=D+S), baseline analitici M/M/1 / M/M/m / M/M/m/K (Erlang-B), criterio dell'IC 95% e consistency checks. Prossimo: prompt Step 5 (Analisi del transitorio).
 - **2026-09-22 (h)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 5** (Analisi del transitorio): metodo di Welch, repliche indipendenti, media cumulativa, troncamento del warm-up per lo steady-state; distinzione tra transitorio iniziale (da troncare) e transitorio d'attacco a fasce (orizzonte finito, da analizzare). Prossimo: prompt Step 6 (orizzonte finito/infinito, batch means, IC).
+- **2026-09-22 (i)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 6** (Disegno esperimenti): repliche (orizzonte finito) per l'attacco, batch means (k≥32/64) per il dimensionamento, IC 95% con `estimate`/Welford, matrice what-if (m,K,λ₂,disciplina) e **Common Random Numbers** per i confronti. Prossimo: prompt Step 7 (analisi output e decisione).
