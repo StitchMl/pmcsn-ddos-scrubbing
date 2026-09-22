@@ -22,7 +22,7 @@
 | 6 | Disegno esperimenti / orizzonte | ✅ impostazione decisa (repliche + batch means + CRN) |
 | 7 | Analisi output & decisione | ✅ impostazione decisa (criteri m*, λ₂*, confronto CRN) |
 | 8 | Modello migliorativo (obbligatorio in gruppo) | ✅ impostazione decisa (candidato: autoscaling) |
-| 9 | Relazione + presentazione orale | ⬜ da fare |
+| 9 | Relazione + presentazione orale | ✅ struttura decisa (metodo COMPLETO) |
 
 ---
 
@@ -189,6 +189,17 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 | Confronto base vs migliorativo | **stessi scenari + CRN**; **differenza accoppiata** dᵢ=X_migl,i−X_base,i con IC 95% (via `estimate`); significativo se IC non contiene 0; **variazione %** Δ%=(X_migl−X_base)/X_base; tabelle affiancate + grafici W₁ vs λ₂ |
 | Criticità | **chattering** se N_up/N_down troppo vicine (serve isteresi/tempo minimo); **setup delay** troppo lungo ⇒ servente pronto a picco finito; **fairness**: autoscaling/size-based penalizzano fortemente la Classe 2 (possibile starvation) |
 
+### Step 9 — Relazione + orale (decisioni)
+| Aspetto | Contenuto |
+|---|---|
+| Indice relazione (10 sez.) | 1 Introduzione/sistema · 2 Obiettivi · 3 Modello concettuale/specifiche · 4 Modello computazionale · 5 Verifica & validazione · 6 Transitorio (warm-up) · 7 Esperimenti & risultati (base) · 8 Modello migliorativo · 9 Analisi comparativa base vs migliorativo · 10 Fase decisionale & conclusioni · 11 Bibliografia |
+| Buone pratiche (Kurkowski) | ogni grafico con **barre IC 95%**; mai un singolo run; **unità e legende** su ogni asse; warm-up giustificato con Welch (no scarto arbitrario); **no raw data dump** |
+| Consegna | relazione PDF · **codice `.py` commentato senza librerie esterne** (Python 3 + `rngs.py`/`rvgs.py` incluse) · script per riprodurre verifiche/esperimenti · slide |
+| Orale (gruppo 2) | ≤10 min a persona (20 tot). Comp.1: intro/obiettivi, concettuale, computazionale, verifica, transitorio. Comp.2: esperimenti, risultati base, migliorativo, confronto, conclusioni. Simulatore pronto su laptop per demo |
+| Criticità | coerenza numeri testo↔tabelle↔grafici; riproducibilità con i seed dichiarati; rispetto dei tempi orali (provare cronometrando) |
+
+> ⚠️ **Correzione bibliografia:** la risposta suggeriva una fonte inventata ("AISURU DDoS Scrubbing Center, Technical Report 2025") — **non esiste, non usarla**. Per il caso reale citare le fonti pubbliche vere già raccolte in §4 (Cloudflare Q4 2025, SecurityAffairs, The Hacker News, GBHackers, Krebs on Security).
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -245,3 +256,19 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (j)** — Deciso il **piano di lavoro codice**: completare prima il metodo (prompt Step 7–9 su NotebookLM), poi scrivere il simulatore Python **commentato**; l'esecuzione sarà a carico dello studente.
 - **2026-09-22 (k)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 7** (Analisi output & decisione): aggregazione Welford senza raw data, grafici con barre IC, criteri decisionali m*/λ₂*, confronto CRN con differenza accoppiata e overlap trap. Prossimo: prompt Step 8 (modello migliorativo, obbligatorio per il gruppo).
 - **2026-09-22 (l)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 8** (Modello migliorativo): proposte autoscaling/size-based/routing; candidato **autoscaling con isteresi** (da confermare); modellazione (nuovi stati/eventi/soglie, setup time); confronto base vs migliorativo con CRN + differenza accoppiata + variazione %. Prossimo: prompt Step 9 (relazione + orale).
+- **2026-09-22 (m)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 9** (Relazione + orale): indice a 10 sezioni, buone pratiche Kurkowski, checklist di consegna, divisione orale per 2. Segnalata e corretta una **fonte inventata** in bibliografia (usare le fonti reali di §4). **METODO COMPLETO (Step 1–9).** Prossima fase: scrittura del codice Python commentato (esecuzione a carico dello studente).
+- **2026-09-22 (n)** — **CODICE - milestone 1**: scritti e verificati `src/rngs.py` (PRNG Lehmer 256 stream, supera il check canonico 399268537), `src/rvgs.py` (generatori: Exponential, Uniform, Equilikely, Erlang, …) e `src/simulator.py` (**modello base** Next-Event: m serventi, buffer K, 2 classi, priorità non-preemptive, accumulatori d'area, leggi operazionali, verifica del bilancio dei flussi). Sanity check OK: U≈ρ=0.75, bilancio flussi chiuso, E[Tq₁]≪E[Tq₂]. **L'esecuzione degli esperimenti è a carico dello studente.** Prossime milestone: `verify.py` (M/M/1, M/M/m/K), `transient.py` (Welch), `experiments.py` (repliche/batch means, IC, CRN), poi l'autoscaling (Step 8).
+
+## Struttura della repo
+```
+pmcsn-ddos-scrubbing/
+├── README.md                (questo registro)
+└── src/
+    ├── rngs.py              PRNG multi-stream (Leemis & Park)  ✅
+    ├── rvgs.py              generatori di variabili aleatorie  ✅
+    ├── simulator.py         modello base Next-Event            ✅
+    ├── verify.py            verifica vs M/M/1, M/M/m/K          ⬜ prossima
+    ├── transient.py         analisi transitorio (Welch)        ⬜
+    └── experiments.py       what-if, batch means, IC, CRN      ⬜
+```
+Per eseguire il modello base:  `python src/simulator.py`  (dalla cartella della repo).
