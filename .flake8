@@ -1,6 +1,0 @@
-[flake8]
-max-line-length = 100
-# E221: allineamento con piu' spazi (scelta di leggibilita', non un bug)
-# W503: interruzione prima dell'operatore (stile ammesso)
-extend-ignore = E221, W503
-exclude = .venv, .git, __pycache__, .idea
