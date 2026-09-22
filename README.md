@@ -17,7 +17,7 @@
 | 1 | Scelta del sistema + obiettivi | ✅ deciso, sezione redatta |
 | 2 | Modello concettuale & specifiche | ✅ deciso (stato, eventi, distrib., scheduling); sezione da finalizzare |
 | 3 | Simulatore Next-Event (Python) | ✅ impostazione decisa; **implementazione da fare** |
-| 4 | Verifica & validazione | ⬜ da fare |
+| 4 | Verifica & validazione | ✅ impostazione decisa (baseline analitici + criterio CI) |
 | 5 | Analisi del transitorio (obbligatoria) | ⬜ da fare |
 | 6 | Disegno esperimenti / orizzonte | ⬜ da fare |
 | 7 | Analisi output & decisione | ⬜ da fare |
@@ -136,6 +136,15 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 
 > ⚠️ Note tecniche da tenere presenti in fase di implementazione: (a) lo pseudocodice Python della risposta ha refusi da correggere (indici `event_list[0]/[1]`, `[0]*SERVERS`, `event_type.split('_')[1]`); (b) `sum.service` va accumulato per **tutti** i job serviti (anche quelli presi in servizio all'arrivo, non solo dalla coda), altrimenti E(T_S) è sottostimato; (c) i valori `SERVERS=8, K=50, STOP=14400` nello sketch sono **placeholder** da fissare; (d) i nomi di slide/capitoli citati vanno verificati sui materiali reali. **Consiglio:** tenere il **servizio esponenziale nel modello base** (così l'M/M/m/K è verificabile analiticamente) e usare H₂ solo come variante/what-if.
 
+### Step 4 — Verifica & Validazione (decisioni)
+| Aspetto | Contenuto |
+|---|---|
+| Verifica codice | bilancio flussi (arrivi = completamenti + scarti + residui nel nodo) per classe e totale; `PlantSeeds` una volta fuori dal ciclo; accumulatori d'area aggiornati PRIMA del cambio di stato; identità W=D+S e l̄=q̄+x̄; Legge di Little con λ_eff=λ(1−P_loss) |
+| Baseline analitici (λ₂=0) | **M/M/1**: U=ρ, E(N)=ρ/(1−ρ), E(N_Q)=ρ²/(1−ρ), E(T_S)=1/(μ−λ), E(T_Q)=ρ/(μ−λ) · **M/M/m** (Erlang-C): π₀, P_Q, E(T_Q)=P_Q/(mμ(1−ρ)) · **M/M/m/K** (nascita-morte, PASTA): P_loss=π_K, X=λ(1−P_loss), U=λ(1−P_loss)/(mμ); per K=m ⇒ **Erlang-B** |
+| Criterio statistico | il valore teorico deve cadere nell'**IC 95%** della stima simulata; t*→1.96 per n grande; n≥~30–40 repliche (≈385 se si vuole semiampiezza = 10% di s) |
+| Consistency checks (validazione) | monotonìa: m↑ ⇒ E(N),D,P_loss↓; λ↑ ⇒ W,U,P_loss↑; saturazione λ≫mμ ⇒ P_loss→1−mμ/λ; grafici W vs λ, P_loss vs K, E(N) vs m |
+| Ramo multi-classe/priorità | non ha forma prodotto: validare prima il motore in mono-classe (λ₂=0 vs M/M/m/K), poi verificare che E(T_Q,1)<E(T_Q,2) e la conservazione del lavoro |
+
 ### Mappatura esercizi ↔ strumenti del corso (traccia progetto)
 1. Nodo singolo normale → M/M/1 / KP
 2. Sotto attacco + cluster → M/M/m (Erlang-C), stabilità
@@ -185,3 +194,4 @@ Struttura in 9 step basata sull'Algoritmo di sviluppo del modello (Leemis & Park
 - **2026-09-22 (d)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 2**: fissate le decisioni su stato, eventi, carico, distribuzioni e scheduling. Aggiunto **vincolo: solo distribuzioni/discipline viste a lezione** (⚠️ NHPP e Bounded Pareto da verificare; in caso negativo → evento artificiale per il picco e H₂ per la variabilità). Preparato il prompt per lo **Step 3 (simulatore Next-Event in Python)**.
 - **2026-09-22 (e)** — Creata e pushata la **repo GitHub `pmcsn-ddos-scrubbing`** (pubblica) con questo registro come README. Aggiunta sezione "Stato di avanzamento". Preparati i prompt NotebookLM per gli Step 4–9.
 - **2026-09-22 (f)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 3** (simulatore Next-Event in Python): fissate architettura, strutture dati, gestione eventi, accumulatori/leggi operazionali, multi-stream `rngs`/`rvgs`, `PlantSeeds` fuori dal ciclo, predisposizione a verifica (M/M/1, M/M/m/K) e transitorio. Annotati refusi dello pseudocodice e consiglio di tenere servizio esponenziale nel base. Prossimo: prompt Step 4 (Verifica & Validazione).
+- **2026-09-22 (g)** — Ricevuta e registrata la risposta NotebookLM per lo **Step 4** (Verifica & Validazione): fissati controlli di verifica (bilancio flussi, Little, W=D+S), baseline analitici M/M/1 / M/M/m / M/M/m/K (Erlang-B), criterio dell'IC 95% e consistency checks. Prossimo: prompt Step 5 (Analisi del transitorio).
