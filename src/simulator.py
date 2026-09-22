@@ -1,6 +1,9 @@
+# simulator.py -- Nodo di scrubbing DDoS (caso AISURU 2025)
 # Simulazione next-event: m serventi, buffer finito K, 2 classi
 # (1=legittimo prioritario, 2=attacco), priorita' non-preemptive,
 # attacco a fasce (Normale->Picco->Mitigazione). PRNG multi-stream rngs/rvgs.
+# PlantSeeds() va chiamata UNA volta dal chiamante (non qui dentro).
+
 from collections import deque
 from rngs import SelectStream, PlantSeeds
 from rvgs import Exponential
@@ -34,6 +37,7 @@ def run_simulation(cfg):
     """Una run. cfg: m, K, Es1, Es2, phases[{dur,lambda1,lambda2}]. Ritorna metriche."""
     m = cfg["m"]
     K = cfg["K"]
+    K2 = cfg.get("K2", K)                        # limite ammissione Classe 2 (K2<K = Fast-Track)
     phases = cfg["phases"]
     P = len(phases)
     Es = [0.0, cfg["Es1"], cfg["Es2"]]          # media di servizio per classe
@@ -95,7 +99,8 @@ def run_simulation(cfg):
     def handle_arrival(k):
         arr[k] += 1
         ph_arr[k][cur] += 1
-        if n[1] + n[2] < K:                     # c'e' posto nel buffer
+        limit = K if k == 1 else K2             # Classe 1 fino a K; Classe 2 solo fino a K2
+        if n[1] + n[2] < limit:                 # c'e' posto (ammissione priority-aware)
             n[k] += 1
             s = free_server()
             if s != -1:
@@ -175,7 +180,7 @@ def run_simulation(cfg):
     }
 
 
-# --- colori ANSI ---
+# --- colori ANSI (output leggibile su terminale moderno) ---
 G, R, Y, B, DIM, RST = "\033[32m", "\033[31m", "\033[33m", "\033[34m", "\033[2m", "\033[0m"
 
 

@@ -25,3 +25,19 @@ legittimo (~88 %)** nonostante la priorità in servizio. Causa: lo scarto *drop-
 all'ingresso **non è priority-aware**. È il difetto su cui agiscono le contromisure
 (schema `schema-sistema.png`, pannello B): ① corsia riservata/Fast-Track per il
 legittimo, ② autoscaling dei serventi al picco, ③ rate-limit sull'attacco.
+
+## Contromisura ① — Corsia riservata / Fast-Track
+Ammissione *priority-aware*: l'attacco (Classe 2) è ammesso solo fino a **K₂ = 1700**,
+riservando **300 slot su 2000** alla Classe 1. Confronto base vs Fast-Track a parità
+di seed (Common Random Numbers), scenario d'attacco.
+
+| Fase | Perdita legittimo — BASE | Perdita legittimo — FAST-TRACK |
+|---|---:|---:|
+| Normale     | 0 %      | 0 % |
+| **Picco**   | **87,5 %** | **0 %** |
+| Mitigazione | 49,9 %   | 0 % |
+
+**Esito:** riservare appena il 15 % del buffer azzera la perdita del traffico
+legittimo durante l'attacco, a costo di servire un po' meno traffico d'attacco
+(che è l'effetto desiderato). Riproducibile con `python src/compare_fasttrack.py`.
+
