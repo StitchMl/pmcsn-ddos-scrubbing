@@ -1,9 +1,6 @@
-# simulator.py -- Nodo di scrubbing DDoS (caso AISURU 2025)
 # Simulazione next-event: m serventi, buffer finito K, 2 classi
 # (1=legittimo prioritario, 2=attacco), priorita' non-preemptive,
 # attacco a fasce (Normale->Picco->Mitigazione). PRNG multi-stream rngs/rvgs.
-# PlantSeeds() va chiamata UNA volta dal chiamante (non qui dentro).
-
 from collections import deque
 from rngs import SelectStream, PlantSeeds
 from rvgs import Exponential
@@ -178,7 +175,7 @@ def run_simulation(cfg):
     }
 
 
-# --- colori ANSI (output leggibile su terminale moderno) ---
+# --- colori ANSI ---
 G, R, Y, B, DIM, RST = "\033[32m", "\033[31m", "\033[33m", "\033[34m", "\033[2m", "\033[0m"
 
 

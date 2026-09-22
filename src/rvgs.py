@@ -1,6 +1,3 @@
-# rvgs.py -- generatori di variabili aleatorie (Leemis & Park).
-# Usano Random() sullo stream corrente di rngs. Solo distribuzioni viste a lezione.
-
 from math import log
 from rngs import Random
 

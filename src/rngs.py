@@ -1,7 +1,4 @@
-# rngs.py -- PRNG multi-stream di Lehmer (Park & Miller / Leemis & Park).
 # 256 stream indipendenti; PlantSeeds() una volta all'avvio, SelectStream(i)
-# per scegliere lo stream. Nessuna libreria esterna.
-
 from time import time as _time
 
 MODULUS    = 2147483647   # 2^31 - 1
