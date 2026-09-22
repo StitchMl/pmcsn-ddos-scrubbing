@@ -1,8 +1,6 @@
-# simulator.py -- Nodo di scrubbing DDoS (caso AISURU 2025)
 # Simulazione next-event: m serventi, buffer finito K, 2 classi
 # (1=legittimo prioritario, 2=attacco), priorita' non-preemptive,
 # attacco a fasce (Normale->Picco->Mitigazione). PRNG multi-stream rngs/rvgs.
-# PlantSeeds() va chiamata UNA volta dal chiamante (non qui dentro).
 
 from collections import deque
 from rngs import SelectStream, PlantSeeds

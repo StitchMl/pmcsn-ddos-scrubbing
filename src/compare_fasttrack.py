@@ -1,4 +1,4 @@
-# compare_fasttrack.py -- Contromisura ①: corsia riservata (Fast-Track).
+# Contromisura 1: corsia riservata (Fast-Track).
 # Confronto BASE vs FAST-TRACK sullo scenario d'attacco, stesso seed (Common
 # Random Numbers): le differenze dipendono solo dall'intervento, non dal caso.
 
