@@ -1,4 +1,4 @@
-from math import log
+from math import log, sqrt, cos, pi
 from rngs import Random
 
 
@@ -7,21 +7,6 @@ def Exponential(m):
     return -m * log(1.0 - Random())
 
 
-def Uniform(a, b):
-    """Uniforme continua su (a, b)."""
-    return a + (b - a) * Random()
-
-
-def Equilikely(a, b):
-    """Intero equiprobabile in {a, ..., b}."""
-    return a + int((b - a + 1) * Random())
-
-
-def Erlang(n, b):
-    """Erlang-n: somma di n esponenziali di media b (C^2 = 1/n)."""
-    return sum(Exponential(b) for _ in range(n))
-
-
-def Bernoulli(p):
-    """1 con probabilita' p, altrimenti 0."""
-    return 1 if Random() < p else 0
+def Normal(m, s):
+    """Normale di media m e deviazione s (Box-Muller, 2 uniformi)."""
+    return m + s * sqrt(-2.0 * log(1.0 - Random())) * cos(2.0 * pi * Random())

@@ -6,8 +6,8 @@
 
 import heapq
 from collections import deque
-from rngs import SelectStream, PlantSeeds, Random
-from rvgs import Exponential
+from rngs import SelectStream, PlantSeeds
+from rvgs import Exponential, Normal
 
 S_ARR = [0, 0, 1]   # stream arrivi per classe vera (1,2)
 S_SRV = [0, 2, 3]   # stream servizi per classe vera
@@ -38,8 +38,8 @@ def run_simulation(cfg):
     Es = [0.0, cfg["Es1"], cfg["Es2"]]
     phases = cfg["phases"]
     P = len(phases)
-    clf = cfg.get("clf", {"d": 1.0, "f": 0.0})
-    d, f = clf["d"], clf["f"]
+    clf = cfg.get("clf", {"sep": 10.0, "theta": 5.0})   # detector: separazione, soglia
+    sep, theta = clf["sep"], clf["theta"]
     pol = cfg.get("policy", {"name": "base"})
     name = pol["name"]
     K_susp = pol.get("K_susp", K)          # ammissione sospetti (fast-track)
@@ -89,9 +89,11 @@ def run_simulation(cfg):
     area_srv = 0.0
 
     def classify(k):
+        # il sistema vede SOLO lo score osservabile (feature), non la vera classe;
+        # legittimo ~ N(0,1), attacco ~ N(sep,1): le distribuzioni si sovrappongono.
         SelectStream(S_CLF)
-        u = Random()
-        return 1 if (u < f if k == 1 else u < d) else 0    # 1 = "sospetto"
+        score = Normal(0.0 if k == 1 else sep, 1.0)
+        return 1 if score > theta else 0                   # sopra soglia -> "sospetto"
 
     def start_service(s, k, ts):
         nonlocal n_busy

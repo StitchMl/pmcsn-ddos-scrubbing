@@ -26,30 +26,35 @@ all'ingresso **non è priority-aware**. È il difetto su cui agiscono le controm
 (schema `schema-sistema.png`, pannello B): ① corsia riservata/Fast-Track per il
 legittimo, ② autoscaling dei serventi al picco, ③ rate-limit sull'attacco.
 
-## Realismo: il sistema NON conosce la vera classe
-Un difensore reale non sa a priori quale richiesta è lecita. Nel modello un
-**classificatore imperfetto** etichetta ogni richiesta come *sospetta* o no, con
-**tasso di rilevamento d = 0,90** e **falsi positivi f = 0,05**. Le contromisure
-agiscono sull'**etichetta**, mentre le metriche misurano il traffico **davvero**
-legittimo. Con classificatore perfetto (d=1, f=0) il Fast-Track azzererebbe la
-perdita; con quello realistico no — ed è questo che rende la simulazione utile.
+## Realismo: il sistema vede un unico flusso e deve *accorgersi* del traffico
+Un difensore reale non sa a priori quale richiesta è lecita: vede **un solo
+flusso** e deve dedurlo da ciò che **osserva**. Nel modello ogni job porta uno
+**score osservabile** (una feature comportamentale: tasso della sorgente,
+impronta della richiesta, ecc.). Le distribuzioni dello score **si sovrappongono**:
+legittimo ~ N(0,1), attacco ~ N(SEP,1). Il sistema vede **solo lo score** e flagga
+"sospetto" se supera una **soglia θ**. Rilevamento **d** e falsi positivi **f**
+**emergono** da questa sovrapposizione (curva ROC): con SEP=3 e θ=1,645 si ha
+d≈0,91 e f≈0,05. Abbassando θ si rileva più attacco ma si penalizza più
+legittimo — il classico compromesso. Le contromisure agiscono sul **flag**, mentre
+le metriche misurano il traffico **davvero** legittimo.
 
 ## Confronto statistico delle contromisure (rigoroso)
 Perdita del legittimo **al picco**, media ± IC 95% su **repliche indipendenti**,
-confronto accoppiato con **Common Random Numbers** (stesso seme per tutte le
-policy in ogni replica). Scenario d'attacco, classificatore d=0,90 / f=0,05.
+confronto accoppiato con **Common Random Numbers**. Detector: score + soglia
+(d≈0,91, f≈0,05).
 
 | Policy | Perdita legittimo al picco | Differenza vs BASE (IC 95%) |
 |---|---:|---:|
 | BASE (nessuna) | 87,2 % ± 0,1 | — |
-| **FAST-TRACK** (corsia riservata) | **22,3 % ± 0,3** | **−64,9 ± 0,2** ✓ significativo |
-| AUTOSCALING (m→16) | 59,9 % ± 0,1 | −27,3 ± 0,1 ✓ significativo |
-| RATE-LIMIT (sospetti) | 78,7 % ± 0,2 | −8,5 ± 0,2 ✓ significativo |
+| **FAST-TRACK** (corsia riservata) | **15,8 % ± 0,3** | **−71,4 ± 0,4** ✓ significativo |
+| AUTOSCALING (m→16) | 59,9 % ± 0,2 | −27,3 ± 0,2 ✓ significativo |
+| RATE-LIMIT (sospetti) | 77,1 % ± 0,3 | −10,2 ± 0,3 ✓ significativo |
 
-**Esito:** tutte le contromisure migliorano in modo statisticamente significativo
-(IC della differenza interamente < 0). La **corsia riservata (①)** è di gran lunga
-la più efficace; l'**autoscaling (②)** aiuta ma non basta da solo (la capacità
-resta sotto il picco); il **rate-limit (③)** è debole perché l'attacco *non rilevato*
-(10%) passa comunque. Riproducibile con `python src/experiments.py`
-(confronto rapido a singola run: `python src/compare_fasttrack.py`).
+**Esito:** tutte migliorano in modo statisticamente significativo (IC della
+differenza interamente < 0). La **corsia riservata (①)** è la più efficace;
+l'**autoscaling (②)** aiuta ma non basta (capacità sotto il picco); il
+**rate-limit (③)** è debole perché l'attacco *non rilevato* passa nella corsia
+buona. La qualità del detector (SEP) e il punto di lavoro (θ) si regolano in
+`scenarios.py`. Riproducibile con `python src/experiments.py` (rapido a singola
+run: `python src/compare_fasttrack.py`).
 

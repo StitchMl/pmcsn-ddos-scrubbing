@@ -3,7 +3,7 @@
 # Common Random Numbers: in ogni replica tutte le policy usano lo STESSO seme
 # (differenze accoppiate). Metrica: perdita del traffico DAVVERO legittimo al picco.
 
-from math import sqrt
+from math import sqrt, erf
 from rngs import PlantSeeds
 from simulator import run_simulation, B, DIM, RST, G, Y
 from scenarios import (scenario_attack, with_policy,
@@ -20,6 +20,11 @@ POLICIES = [
     ("RATE-LIMIT", pol_ratelimit(rate=6000.0, burst=200.0)),
     ("AUTOSCALING", pol_autoscale(m_max=16, up=200, down=20, setup=0.5)),
 ]
+
+
+def _phi(x):
+    """CDF della normale standard."""
+    return 0.5 * (1 + erf(x / sqrt(2)))
 
 
 def idf_student(df):
@@ -71,8 +76,10 @@ def main():
         print(f"  {name:16s} {m:8.2f} +/- {h:4.2f} %   "
               f"{md:8.2f} +/- {hd:4.2f} %  {mark}")
 
-    print(f"\n{DIM}BASE = class-blind. Le altre agiscono sull'etichetta di un "
-          f"classificatore imperfetto (d={base_cfg['clf']['d']}, f={base_cfg['clf']['f']}).{RST}")
+    sep, th = base_cfg["clf"]["sep"], base_cfg["clf"]["theta"]
+    d_eff, f_eff = 1 - _phi(th - sep), 1 - _phi(th)    # d,f emergono da score+soglia
+    print(f"\n{DIM}BASE = class-blind. Le altre decidono su uno SCORE osservabile "
+          f"(soglia): rilevamento d~={d_eff:.2f}, falsi positivi f~={f_eff:.2f}.{RST}")
 
 
 if __name__ == "__main__":

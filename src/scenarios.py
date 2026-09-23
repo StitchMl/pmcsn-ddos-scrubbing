@@ -13,15 +13,18 @@ LAMBDA_MITIG = 12000.0  # attacco in mitigazione
 
 DUR_NORMAL, DUR_PEAK, DUR_MITIG = 30.0, 60.0, 30.0   # durate delle fasce [s]
 
-# classificatore imperfetto (il sistema NON conosce la vera classe)
-CLF_D = 0.90            # tasso di rilevamento dell'attacco
-CLF_F = 0.05            # tasso di falsi positivi sul legittimo
+# detector: il sistema vede solo uno SCORE osservabile per job (non la classe).
+# legittimo ~ N(0,1), attacco ~ N(SEP,1); flag se score > THETA.
+# rilevamento d e falsi positivi f EMERGONO dalla sovrapposizione (curva ROC):
+# con SEP=3, THETA=1.645  ->  f~=0.05, d~=0.91.
+CLF_SEP   = 3.0         # separazione lecito/attacco nello spazio delle feature (qualita')
+CLF_THETA = 1.645       # soglia di decisione (punto di lavoro / operating point)
 
 
 def scenario_nominal(m=M_NOMINAL, K=K_BUFFER, duration=200.0, lambda2=LAMBDA_BG):
     from simulator import single_phase
     return {"m": m, "K": K, "Es1": ES_INSPECT, "Es2": ES_INSPECT,
-            "clf": {"d": CLF_D, "f": CLF_F}, "policy": {"name": "base"},
+            "clf": {"sep": CLF_SEP, "theta": CLF_THETA}, "policy": {"name": "base"},
             "phases": single_phase(LAMBDA_LEGIT, lambda2, duration)}
 
 
@@ -34,7 +37,7 @@ def scenario_attack(m=M_NOMINAL, K=K_BUFFER, dur_scale=1.0):
         {"dur": DUR_MITIG * dur_scale,  "lambda1": LAMBDA_LEGIT, "lambda2": LAMBDA_MITIG},
     ]
     return {"m": m, "K": K, "Es1": ES_INSPECT, "Es2": ES_INSPECT,
-            "clf": {"d": CLF_D, "f": CLF_F}, "policy": {"name": "base"},
+            "clf": {"sep": CLF_SEP, "theta": CLF_THETA}, "policy": {"name": "base"},
             "phases": phases}
 
 
