@@ -21,14 +21,14 @@ CLF_SEP   = 3.0         # separazione lecito/attacco nello spazio delle feature 
 CLF_THETA = 1.645       # soglia di decisione (punto di lavoro / operating point)
 
 
-def scenario_nominal(m=M_NOMINAL, K=K_BUFFER, duration=200.0, lambda2=LAMBDA_BG):
+def scenario_nominal(m=M_NOMINAL, k=K_BUFFER, duration=200.0, lambda2=LAMBDA_BG):
     from simulator import single_phase
-    return {"m": m, "K": K, "Es1": ES_INSPECT, "Es2": ES_INSPECT,
+    return {"m": m, "K": k, "Es1": ES_INSPECT, "Es2": ES_INSPECT,
             "clf": {"sep": CLF_SEP, "theta": CLF_THETA}, "policy": {"name": "base"},
             "phases": single_phase(LAMBDA_LEGIT, lambda2, duration)}
 
 
-def scenario_attack(m=M_NOMINAL, K=K_BUFFER, dur_scale=1.0):
+def scenario_attack(m=M_NOMINAL, k=K_BUFFER, dur_scale=1.0):
     """Attacco a 3 fasce, policy BASE (class-blind). dur_scale accorcia le fasce
     per esperimenti piu' rapidi."""
     phases = [
@@ -36,7 +36,7 @@ def scenario_attack(m=M_NOMINAL, K=K_BUFFER, dur_scale=1.0):
         {"dur": DUR_PEAK * dur_scale,   "lambda1": LAMBDA_LEGIT, "lambda2": LAMBDA_PEAK},
         {"dur": DUR_MITIG * dur_scale,  "lambda1": LAMBDA_LEGIT, "lambda2": LAMBDA_MITIG},
     ]
-    return {"m": m, "K": K, "Es1": ES_INSPECT, "Es2": ES_INSPECT,
+    return {"m": m, "K": k, "Es1": ES_INSPECT, "Es2": ES_INSPECT,
             "clf": {"sep": CLF_SEP, "theta": CLF_THETA}, "policy": {"name": "base"},
             "phases": phases}
 

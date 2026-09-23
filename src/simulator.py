@@ -36,14 +36,14 @@ class Simulation:
 
     def __init__(self, cfg):
         self.K = cfg["K"]
-        self.Es = [0.0, cfg["Es1"], cfg["Es2"]]
+        self.es = [0.0, cfg["Es1"], cfg["Es2"]]
         self.phases = cfg["phases"]
         self.P = len(self.phases)
         clf = cfg.get("clf", {"sep": 10.0, "theta": 5.0})
         self.sep, self.theta = clf["sep"], clf["theta"]
         pol = cfg.get("policy", {"name": "base"})
         self.name = pol["name"]
-        self.K_susp = pol.get("K_susp", self.K)
+        self.k_susp = pol.get("K_susp", self.K)
         self.rl_rate = pol.get("rate", INF)
         self.rl_burst = pol.get("burst", 1.0)
 
@@ -63,7 +63,7 @@ class Simulation:
 
         self.clock = 0.0
         self.n = [0, 0, 0]
-        self.qG, self.qS = deque(), deque()
+        self.q_gen, self.q_susp = deque(), deque()
         self.scls = [0] * self.M
         self.sarr = [0.0] * self.M
         self.t_c = [INF] * self.M
@@ -86,8 +86,8 @@ class Simulation:
         self.drop = [0, 0, 0]
         self.ph_arr = [[0] * P, [0] * P, [0] * P]
         self.ph_drop = [[0] * P, [0] * P, [0] * P]
-        self.ph_N = [0.0] * P
-        self.ph_T = [0.0] * P
+        self.ph_n = [0.0] * P
+        self.ph_t = [0.0] * P
         self.area_srv = 0.0
 
     # --- classificatore: decide sul solo score osservabile ---
@@ -99,7 +99,7 @@ class Simulation:
     def _start(self, s, k, ts):
         self.scls[s] = k
         self.sarr[s] = ts
-        tc = self.clock + _service(S_SRV[k], self.Es[k])
+        tc = self.clock + _service(S_SRV[k], self.es[k])
         self.t_c[s] = tc
         heapq.heappush(self.comp, (tc, s))
         self.n_busy += 1
@@ -109,12 +109,12 @@ class Simulation:
         if self.free:
             self._start(self.free.pop(), k, self.clock)
         else:
-            (self.qS if lane_s else self.qG).append((self.clock, k))
+            (self.q_susp if lane_s else self.q_gen).append((self.clock, k))
 
     def _admit(self, k, susp):
         ntot = self.n[1] + self.n[2]
         if self.name == "fasttrack":
-            if ntot >= (self.K_susp if susp else self.K):
+            if ntot >= (self.k_susp if susp else self.K):
                 return False
             self._place(k, susp)
             return True
@@ -151,8 +151,8 @@ class Simulation:
         self.sum_resp[k] += self.clock - self.sarr[s]
         self.n_busy -= 1
         self.t_c[s] = INF
-        if self.qG or self.qS:
-            ts, kk = (self.qG if self.qG else self.qS).popleft()
+        if self.q_gen or self.q_susp:
+            ts, kk = (self.q_gen if self.q_gen else self.q_susp).popleft()
             self._start(s, kk, ts)
         elif (self.name == "autoscale" and (self.n[1] + self.n[2]) <= self.down
               and self.n_active > self.m_min):
@@ -167,8 +167,8 @@ class Simulation:
             if not self.active[s]:
                 self.active[s] = True
                 self.n_active += 1
-                if self.qG or self.qS:
-                    ts, kk = (self.qG if self.qG else self.qS).popleft()
+                if self.q_gen or self.q_susp:
+                    ts, kk = (self.q_gen if self.q_gen else self.q_susp).popleft()
                     self._start(s, kk, ts)
                 else:
                     self.free.append(s)
@@ -209,8 +209,8 @@ class Simulation:
         self.area_node[1] += dt * self.n[1]
         self.area_node[2] += dt * self.n[2]
         self.area_srv += dt * self.n_busy
-        self.ph_N[self.cur] += dt * (self.n[1] + self.n[2])
-        self.ph_T[self.cur] += dt
+        self.ph_n[self.cur] += dt * (self.n[1] + self.n[2])
+        self.ph_t[self.cur] += dt
 
     def run(self):
         while True:
@@ -235,10 +235,10 @@ class Simulation:
             return a / b if b > 0 else 0.0
 
         per_phase = [{
-            "lambda2": self.phases[i]["lambda2"], "dur": self.ph_T[i],
+            "lambda2": self.phases[i]["lambda2"], "dur": self.ph_t[i],
             "Ploss1": rate(self.ph_drop[1][i], self.ph_arr[1][i]),
             "Ploss2": rate(self.ph_drop[2][i], self.ph_arr[2][i]),
-            "E_N": rate(self.ph_N[i], self.ph_T[i]),
+            "E_N": rate(self.ph_n[i], self.ph_t[i]),
         } for i in range(self.P)]
 
         return {
@@ -262,7 +262,12 @@ G, R, Y, B, DIM, RST = "\033[32m", "\033[31m", "\033[33m", "\033[34m", "\033[2m"
 
 
 def col(p):
-    color = G if p < 0.01 else Y if p < 0.10 else R
+    if p < 0.01:
+        color = G
+    elif p < 0.10:
+        color = Y
+    else:
+        color = R
     return f"{color}{p * 100:5.1f}%{RST}"
 
 

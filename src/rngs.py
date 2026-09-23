@@ -1,4 +1,6 @@
 # 256 stream indipendenti; PlantSeeds() una volta all'avvio, SelectStream(i)
+# Libreria canonica Park & Leemis: i nomi (Random, PlantSeeds, ...) sono l'API
+# standard del corso -> non rinominare (# NOSONAR sopprime la regola sul nome).
 from time import time as _time
 
 MODULUS    = 2147483647   # 2^31 - 1
@@ -13,7 +15,7 @@ _stream = 0
 _initialized = False
 
 
-def Random():
+def Random():  # NOSONAR
     """Numero pseudo-casuale in (0,1) sullo stream corrente (Schrage, no overflow)."""
     Q = MODULUS // MULTIPLIER
     R = MODULUS % MULTIPLIER
@@ -23,7 +25,7 @@ def Random():
     return _seed[_stream] / MODULUS
 
 
-def PutSeed(x):
+def PutSeed(x):  # NOSONAR
     """Imposta il seme dello stream corrente (x<0: da orologio; x==0: da input)."""
     if x > 0:
         x = x % MODULUS
@@ -37,12 +39,12 @@ def PutSeed(x):
     _seed[_stream] = x
 
 
-def GetSeed():
+def GetSeed():  # NOSONAR
     """Seme corrente dello stream attivo (per logging/riproducibilita')."""
     return _seed[_stream]
 
 
-def SelectStream(index):
+def SelectStream(index):  # NOSONAR
     """Seleziona lo stream attivo (0..255)."""
     global _stream
     _stream = index % STREAMS
@@ -50,7 +52,7 @@ def SelectStream(index):
         PlantSeeds(DEFAULT)
 
 
-def PlantSeeds(x):
+def PlantSeeds(x):  # NOSONAR
     """Inizializza tutti i 256 stream a partire dal seme x. Chiamare UNA volta,
     fuori dal ciclo delle repliche (stream disgiunti -> run indipendenti)."""
     global _stream, _initialized
@@ -66,7 +68,7 @@ def PlantSeeds(x):
         _seed[j] = t if t > 0 else t + MODULUS
 
 
-def TestRandom():
+def TestRandom():  # NOSONAR
     """Verifica del generatore: 10000 estrazioni da seme 1 -> GetSeed()==CHECK."""
     SelectStream(0)
     PutSeed(1)

@@ -13,7 +13,7 @@ def _run(cfg):
     return run_simulation(cfg)
 
 
-def _fastTrack():
+def _fast_track():
     atk = scenario_attack()
     base = _run(with_policy(atk, pol_base()))
     ft = _run(with_policy(atk, pol_fasttrack(reserve=300)))
@@ -26,4 +26,4 @@ def _fastTrack():
 
 
 if __name__ == "__main__":
-    _fastTrack()
+    _fast_track()
