@@ -26,18 +26,30 @@ all'ingresso **non è priority-aware**. È il difetto su cui agiscono le controm
 (schema `schema-sistema.png`, pannello B): ① corsia riservata/Fast-Track per il
 legittimo, ② autoscaling dei serventi al picco, ③ rate-limit sull'attacco.
 
-## Contromisura ① — Corsia riservata / Fast-Track
-Ammissione *priority-aware*: l'attacco (Classe 2) è ammesso solo fino a **K₂ = 1700**,
-riservando **300 slot su 2000** alla Classe 1. Confronto base vs Fast-Track a parità
-di seed (Common Random Numbers), scenario d'attacco.
+## Realismo: il sistema NON conosce la vera classe
+Un difensore reale non sa a priori quale richiesta è lecita. Nel modello un
+**classificatore imperfetto** etichetta ogni richiesta come *sospetta* o no, con
+**tasso di rilevamento d = 0,90** e **falsi positivi f = 0,05**. Le contromisure
+agiscono sull'**etichetta**, mentre le metriche misurano il traffico **davvero**
+legittimo. Con classificatore perfetto (d=1, f=0) il Fast-Track azzererebbe la
+perdita; con quello realistico no — ed è questo che rende la simulazione utile.
 
-| Fase | Perdita legittimo — BASE | Perdita legittimo — FAST-TRACK |
+## Confronto statistico delle contromisure (rigoroso)
+Perdita del legittimo **al picco**, media ± IC 95% su **repliche indipendenti**,
+confronto accoppiato con **Common Random Numbers** (stesso seme per tutte le
+policy in ogni replica). Scenario d'attacco, classificatore d=0,90 / f=0,05.
+
+| Policy | Perdita legittimo al picco | Differenza vs BASE (IC 95%) |
 |---|---:|---:|
-| Normale     | 0 %      | 0 % |
-| **Picco**   | **87,5 %** | **0 %** |
-| Mitigazione | 49,9 %   | 0 % |
+| BASE (nessuna) | 87,2 % ± 0,1 | — |
+| **FAST-TRACK** (corsia riservata) | **22,3 % ± 0,3** | **−64,9 ± 0,2** ✓ significativo |
+| AUTOSCALING (m→16) | 59,9 % ± 0,1 | −27,3 ± 0,1 ✓ significativo |
+| RATE-LIMIT (sospetti) | 78,7 % ± 0,2 | −8,5 ± 0,2 ✓ significativo |
 
-**Esito:** riservare appena il 15 % del buffer azzera la perdita del traffico
-legittimo durante l'attacco, a costo di servire un po' meno traffico d'attacco
-(che è l'effetto desiderato). Riproducibile con `python src/compare_fasttrack.py`.
+**Esito:** tutte le contromisure migliorano in modo statisticamente significativo
+(IC della differenza interamente < 0). La **corsia riservata (①)** è di gran lunga
+la più efficace; l'**autoscaling (②)** aiuta ma non basta da solo (la capacità
+resta sotto il picco); il **rate-limit (③)** è debole perché l'attacco *non rilevato*
+(10%) passa comunque. Riproducibile con `python src/experiments.py`
+(confronto rapido a singola run: `python src/compare_fasttrack.py`).
 

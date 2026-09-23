@@ -1,35 +1,28 @@
-# Contromisura 1: corsia riservata (Fast-Track).
-# Confronto BASE vs FAST-TRACK sullo scenario d'attacco, stesso seed (Common
-# Random Numbers): le differenze dipendono solo dall'intervento, non dal caso.
+# Confronto rapido BASE vs FAST-TRACK (singola run, classificatore realistico).
+# Per il confronto rigoroso con intervalli di confidenza usare experiments.py.
 
 from rngs import PlantSeeds
 from simulator import run_simulation, col, B, RST, DIM
-from scenarios import scenario_attack, K_BUFFER
+from scenarios import scenario_attack, with_policy, pol_base, pol_fasttrack
 
 SEED = 123456789
-RESERVE = 300                          # slot riservati alla Classe 1 (K2 = K - RESERVE)
 
 
 def _run(cfg):
-    PlantSeeds(SEED)                   # stesso seme -> stessa sequenza (CRN)
+    PlantSeeds(SEED)                   # stesso seme -> CRN
     return run_simulation(cfg)
 
 
 def _fastTrack():
-    base = _run(scenario_attack())                         # K2 = K (nessuna riserva)
-    ft = _run(scenario_attack(K2=K_BUFFER - RESERVE))      # Fast-Track
-
-    print(f"{B}Contromisura 1 - Fast-Track{RST}  "
-          f"{DIM}(riserva {RESERVE} slot su {K_BUFFER} alla Classe 1){RST}")
-    print(f"{'fase':12s} {'perdita legittimo: BASE':>26s}   {'FAST-TRACK':>12s}")
+    atk = scenario_attack()
+    base = _run(with_policy(atk, pol_base()))
+    ft = _run(with_policy(atk, pol_fasttrack(reserve=300)))
+    print(f"{B}BASE vs FAST-TRACK{RST}  {DIM}(perdita legittimo per fascia){RST}")
     nomi = ["Normale", "Picco", "Mitigazione"]
     for i, nome in enumerate(nomi):
         pb = base["phases"][i]["Ploss1"]
         pf = ft["phases"][i]["Ploss1"]
-        print(f"  {nome:10s} {col(pb):>34s}   {col(pf):>20s}")
-
-    print(f"\n{DIM}Throughput attacco servito (Classe 2) - base X2={base['X2']:.0f}/s, "
-          f"fast-track X2={ft['X2']:.0f}/s{RST}")
+        print(f"  {nome:12s} base {col(pb)}   fast-track {col(pf)}")
 
 
 if __name__ == "__main__":
