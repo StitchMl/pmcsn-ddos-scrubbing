@@ -48,28 +48,27 @@ def peak_loss(cfg):
     return run_simulation(cfg)["phases"][1]["Ploss1"] * 100.0
 
 
-def main():
-    seeds = [(SEED0 + r * STRIDE) % 2147483647 for r in range(REPS)]
-    base_cfg = scenario_attack(dur_scale=DUR_SCALE)
+def main(reps=REPS, dur_scale=DUR_SCALE):
+    seeds = [(SEED0 + r * STRIDE) % 2147483647 for r in range(reps)]
+    base_cfg = scenario_attack(dur_scale=dur_scale)
 
     # raccolta: per ogni policy la lista dei valori sulle repliche (CRN)
     samples = {name: [] for name, _ in POLICIES}
-    for r in range(REPS):
+    for r in range(reps):
         for name, pol in POLICIES:
             PlantSeeds(seeds[r])               # stesso seme -> CRN tra le policy
             samples[name].append(peak_loss(with_policy(base_cfg, pol)))
 
     base = samples["BASE (nessuna)"]
-    mb, hb = ci95(base)
 
-    print(f"{B}Perdita del legittimo al PICCO  (media +/- IC 95%, {REPS} repliche){RST}")
+    print(f"{B}Perdita del legittimo al PICCO  (media +/- IC 95%, {reps} repliche){RST}")
     print(f"{'policy':16s} {'perdita legittimo':>20s}   {'differenza vs BASE (IC95)':>30s}")
     for name, _ in POLICIES:
         m, h = ci95(samples[name])
         if name.startswith("BASE"):
             print(f"  {name:16s} {m:8.2f} +/- {h:4.2f} %")
             continue
-        diff = [samples[name][r] - base[r] for r in range(REPS)]   # differenza accoppiata
+        diff = [samples[name][r] - base[r] for r in range(reps)]   # differenza accoppiata
         md, hd = ci95(diff)
         sig = (md + hd) < 0                     # IC interamente < 0 -> miglioramento certo
         mark = f"{G}significativo{RST}" if sig else f"{Y}non concl.{RST}"
